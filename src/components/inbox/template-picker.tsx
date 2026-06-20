@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getErrorMessage } from "@/lib/utils";
 import type { MessageTemplate } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,7 +114,7 @@ export function TemplatePicker({
 
       if (cancelled) return;
       if (error) {
-        console.error("Failed to fetch templates:", error);
+        console.error("Failed to fetch templates:", getErrorMessage(error), error);
         setTemplates([]);
       } else {
         setTemplates((data as MessageTemplate[]) ?? []);

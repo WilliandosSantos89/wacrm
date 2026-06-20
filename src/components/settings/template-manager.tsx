@@ -51,6 +51,7 @@ import {
   extractVariableIndices,
   TEMPLATE_LIMITS,
 } from '@/lib/whatsapp/template-validators';
+import { getErrorMessage } from '@/lib/utils';
 
 const CATEGORIES = ['Marketing', 'Utility', 'Authentication'] as const;
 type HeaderFormat = 'none' | 'text' | 'image' | 'video' | 'document';
@@ -196,10 +197,11 @@ export function TemplateManager() {
       if (error) throw error;
       setTemplates(data || []);
     } catch (err) {
-      console.error('Failed to fetch templates:', err);
-      toast.error('Failed to load templates');
+      const message = getErrorMessage(err)
+      console.error('Failed to fetch templates:', message, err)
+      toast.error('Failed to load templates')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 

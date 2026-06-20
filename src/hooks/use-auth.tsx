@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getErrorMessage } from '@/lib/utils';
 import type { User } from "@supabase/supabase-js";
 import { DEFAULT_CURRENCY } from "@/lib/currency";
 import {
@@ -106,16 +107,8 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function logSupabaseError(topic: string, error: unknown) {
-  if (error instanceof Error) {
-    console.error(topic, error);
-    return;
-  }
-
-  try {
-    console.error(topic, JSON.stringify(error, null, 2));
-  } catch {
-    console.error(topic, error);
-  }
+  const message = getErrorMessage(error)
+  console.error(topic, message, error)
 }
 
 /**
@@ -155,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        console.error("[AuthProvider] fetchProfile error:", error);
+        logSupabaseError("[AuthProvider] fetchProfile error:", error);
         setProfile(null);
         setAccount(null);
         return;
@@ -217,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccount(accountRow);
       }
     } catch (err) {
-      console.error("[AuthProvider] fetchProfile threw:", err);
+      logSupabaseError("[AuthProvider] fetchProfile threw:", err);
     } finally {
       setProfileLoading(false);
     }
@@ -261,7 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfileLoading(false);
         }
       } catch (err) {
-        console.error("[AuthProvider] init threw:", err);
+        logSupabaseError("[AuthProvider] init threw:", err);
       } finally {
         if (mounted) setLoading(false);
         clearTimeout(safetyTimer);
