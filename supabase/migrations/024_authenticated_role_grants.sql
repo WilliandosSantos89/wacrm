@@ -3,6 +3,7 @@
 -- connections to evaluate those policies instead of failing with 42501.
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.accounts TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.contacts TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.tags TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.contact_tags TO authenticated;

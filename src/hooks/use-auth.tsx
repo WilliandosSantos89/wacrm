@@ -106,6 +106,30 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function isJwtExpiredError(error: unknown): boolean {
+  if (error instanceof Error) {
+    return (
+      error.message.includes('JWT expired') ||
+      error.message.includes('PGRST303') ||
+      error.message.includes('jwt expired')
+    )
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    const err = error as Record<string, unknown>
+    const message = typeof err.message === 'string' ? err.message : ''
+    const code = typeof err.code === 'string' ? err.code : ''
+    return (
+      message.includes('JWT expired') ||
+      message.includes('PGRST303') ||
+      message.includes('jwt expired') ||
+      code === 'PGRST303'
+    )
+  }
+
+  return false
+}
+
 function logSupabaseError(topic: string, error: unknown) {
   const message = getErrorMessage(error)
   console.error(topic, message, error)
@@ -130,29 +154,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Shared across init, auth-state-change listener, and the exposed
   // refreshProfile() callback. Reads the current session's user id and
   // pulls the matching profile row along with its account summary.
-  const fetchProfile = useCallback(async (userId: string) => {
-    const supabase = createClient();
-    setProfileLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(
-          // `account:accounts!inner(id, name)` — explicit join on the
-          // single FK profiles.account_id → accounts.id. `!inner` so a
-          // missing account collapses to null rather than a half-
-          // populated row (shouldn't happen post-017 NOT NULL, but
-          // belt-and-braces against forks running older schemas).
-          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, account:accounts!inner(id, name, default_currency)",
-        )
-        .eq("user_id", userId)
-        .maybeSingle();
+  const fetchProfile = useCallback(
+    async (userId: string, retry = 0) => {
+      const supabase = createClient();
+      setProfileLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(
+            // `account:accounts!inner(id, name)` — explicit join on the
+            // single FK profiles.account_id → accounts.id. `!inner` so a
+            // missing account collapses to null rather than a half-
+            // populated row (shouldn't happen post-017 NOT NULL, but
+            // belt-and-braces against forks running older schemas).
+            "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, account:accounts!inner(id, name, default_currency)",
+          )
+          .eq("user_id", userId)
+          .maybeSingle();
 
-      if (error) {
-        logSupabaseError("[AuthProvider] fetchProfile error:", error);
-        setProfile(null);
-        setAccount(null);
-        return;
-      }
+        if (error) {
+          if (retry === 0 && isJwtExpiredError(error)) {
+            logSupabaseError(
+              "[AuthProvider] fetchProfile token expired, refreshing session:",
+              error,
+            )
+            const { data: refreshData, error: refreshError } =
+              await supabase.auth.refreshSession()
+
+            if (refreshError) {
+              logSupabaseError(
+                "[AuthProvider] refreshSession failed:",
+                refreshError,
+              )
+              setProfile(null)
+              setAccount(null)
+              return
+            }
+
+            if (refreshData?.session?.user?.id === userId) {
+              await fetchProfile(userId, retry + 1)
+              return
+            }
+
+            setProfile(null)
+            setAccount(null)
+            return
+          }
+
+          logSupabaseError("[AuthProvider] fetchProfile error:", error)
+          setProfile(null)
+          setAccount(null)
+          return
+        }
 
       if (!data) {
         console.warn("[AuthProvider] fetchProfile returned no data", { userId });
