@@ -105,6 +105,19 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function logSupabaseError(topic: string, error: unknown) {
+  if (error instanceof Error) {
+    console.error(topic, error);
+    return;
+  }
+
+  try {
+    console.error(topic, JSON.stringify(error, null, 2));
+  } catch {
+    console.error(topic, error);
+  }
+}
+
 /**
  * AuthProvider — wrap this around the dashboard layout.
  * Makes ONE getSession() call for the whole tree instead of one per
@@ -142,12 +155,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        console.error("[AuthProvider] fetchProfile error:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        });
+        console.error("[AuthProvider] fetchProfile error:", error);
+        setProfile(null);
+        setAccount(null);
+        return;
+      }
+
+      if (!data) {
+        console.warn("[AuthProvider] fetchProfile returned no data", { userId });
+        setProfile(null);
+        setAccount(null);
         return;
       }
 
@@ -225,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           error,
         } = await supabase.auth.getSession();
 
-        if (error) console.error("[AuthProvider] getSession error:", error.message);
+        if (error) logSupabaseError("[AuthProvider] getSession error:", error);
 
         if (!mounted) return;
         const currentUser = session?.user ?? null;
