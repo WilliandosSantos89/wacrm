@@ -29,6 +29,9 @@ DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- Ensure the authenticated role has the necessary table privileges so RLS
+-- policies can be evaluated by client connections.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
 
 -- ============================================================
 -- CONTACTS
@@ -51,6 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_contacts_phone ON contacts(phone);
 ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage own contacts" ON contacts;
 CREATE POLICY "Users can manage own contacts" ON contacts FOR ALL USING (auth.uid() = user_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.contacts TO authenticated;
 
 -- ============================================================
 -- TAGS
@@ -66,6 +70,7 @@ CREATE TABLE IF NOT EXISTS tags (
 ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage own tags" ON tags;
 CREATE POLICY "Users can manage own tags" ON tags FOR ALL USING (auth.uid() = user_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.tags TO authenticated;
 
 -- ============================================================
 -- CONTACT_TAGS (many-to-many)
@@ -85,6 +90,7 @@ ALTER TABLE contact_tags ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage contact tags" ON contact_tags;
 CREATE POLICY "Users can manage contact tags" ON contact_tags FOR ALL
   USING (EXISTS (SELECT 1 FROM contacts WHERE contacts.id = contact_tags.contact_id AND contacts.user_id = auth.uid()));
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.contact_tags TO authenticated;
 
 -- ============================================================
 -- CUSTOM_FIELDS
@@ -101,6 +107,7 @@ CREATE TABLE IF NOT EXISTS custom_fields (
 ALTER TABLE custom_fields ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage own custom fields" ON custom_fields;
 CREATE POLICY "Users can manage own custom fields" ON custom_fields FOR ALL USING (auth.uid() = user_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.custom_fields TO authenticated;
 
 -- ============================================================
 -- CONTACT_CUSTOM_VALUES
@@ -118,6 +125,7 @@ ALTER TABLE contact_custom_values ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage custom values" ON contact_custom_values;
 CREATE POLICY "Users can manage custom values" ON contact_custom_values FOR ALL
   USING (EXISTS (SELECT 1 FROM contacts WHERE contacts.id = contact_custom_values.contact_id AND contacts.user_id = auth.uid()));
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.contact_custom_values TO authenticated;
 
 -- ============================================================
 -- CONTACT_NOTES
