@@ -91,23 +91,23 @@ const emptyForm: TemplateFormData = {
 };
 
 const COMMON_LANGUAGE_CODES = [
-  'en_US',
-  'en_GB',
-  'en',
-  'es',
-  'es_ES',
-  'es_MX',
-  'fr',
-  'fr_FR',
-  'de',
-  'it',
-  'pt_BR',
-  'pt_PT',
-  'nl',
-  'pl',
-  'ru',
-  'tr',
-  'lt',
+  { code: 'en_US', label: 'English (US)' },
+  { code: 'en_GB', label: 'English (UK)' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'es_ES', label: 'Español (España)' },
+  { code: 'es_MX', label: 'Español (México)' },
+  { code: 'fr', label: 'Français' },
+  { code: 'fr_FR', label: 'Français (France)' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'pt_BR', label: 'Português (Brasil)' },
+  { code: 'pt_PT', label: 'Português (Portugal)' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'lt', label: 'Lietuvių' },
 ];
 
 function emptyButton(type: TemplateButton['type']): TemplateButton {
@@ -721,8 +721,12 @@ export function TemplateManager() {
                   className="bg-muted border-border text-foreground placeholder:text-muted-foreground disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 <datalist id="template-language-codes">
-                  {COMMON_LANGUAGE_CODES.map((code) => (
-                    <option key={code} value={code} />
+                  {COMMON_LANGUAGE_CODES.map((language) => (
+                    <option
+                      key={language.code}
+                      value={language.code}
+                      label={language.label}
+                    />
                   ))}
                 </datalist>
                 <p className="text-[11px] text-muted-foreground">
