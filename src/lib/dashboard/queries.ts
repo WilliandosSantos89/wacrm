@@ -17,6 +17,12 @@ import type {
   ResponseTimeSummary,
 } from './types'
 
+function assertQuerySuccess(error: { message?: string; details?: string; hint?: string } | null, label: string) {
+  if (!error) return
+  const parts = [error.message, error.details, error.hint].filter(Boolean)
+  throw new Error(`${label}${parts.length > 0 ? `: ${parts.join(' — ')}` : ''}`)
+}
+
 // ------------------------------------------------------------
 // All client-side aggregation. RLS scopes every query to the
 // signed-in user automatically, so we never pass user_id explicitly
@@ -111,7 +117,7 @@ export async function loadConversationsSeries(
     .select('created_at, sender_type')
     .gte('created_at', start)
     .order('created_at', { ascending: true })
-  if (error) throw error
+  assertQuerySuccess(error, 'Failed to load conversation series')
 
   const keys = lastNDayKeys(rangeDays)
   const buckets = new Map<string, { incoming: number; outgoing: number }>()
